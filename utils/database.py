@@ -1,5 +1,6 @@
 import os
 import sys
+from unicodedata import category
 from xml.dom.pulldom import default_bufsize
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -19,6 +20,7 @@ COLUMNS = [
     "viewer feeling of youtuber's style ",
     "describe how to make it",
     "venue",
+    "container",
 ]
 
 
@@ -34,6 +36,7 @@ def read_file(file_dir=FILE_DIR, columns=COLUMNS):
     using_data = raw_data[columns]
     using_data = using_data.dropna(axis=0)
 
+    # Modify start time and end time
     index_data = list()
     for str_time in using_data["start time"]:
         if str_time[0].isdigit() and str_time[-1].isdigit():
@@ -60,6 +63,7 @@ def read_file(file_dir=FILE_DIR, columns=COLUMNS):
                 end_time_in_seconds,
                 start_time_in_seconds,
             )
+
         df_time.append((start_time_in_seconds, end_time_in_seconds))
 
     using_data[["start time", "end time"]] = df_time
@@ -81,30 +85,36 @@ def read_file(file_dir=FILE_DIR, columns=COLUMNS):
         using_data["Unnamed: 11"] - using_data["Unnamed: 11"].mean()
     ) / using_data["Unnamed: 11"].std()
 
-    # Label encoding
+    # Label encoding for venue data
     label_encoder = OneHotEncoder(handle_unknown="ignore")
     encoder_data = pd.DataFrame(
-        label_encoder.fit_transform(using_data[["venue"]]).toarray()
+        label_encoder.fit_transform(using_data[["venue"]]).toarray(),
+        columns=list(label_encoder.categories_[0]),
     )
     using_data = using_data.join(encoder_data)
     using_data.drop(columns=["venue"], inplace=True)
 
-    # Rename columns
-    default_columns = [
-        "start time",
-        "end time",
-        "Unnamed: 11",
-        "viewer feeling of youtuber's style ",
-        "describe how to make it",
-    ]
-    columns = default_columns + list(label_encoder.categories_[0])
-    using_data.columns = columns
+    using_data["container"] = using_data["container"].str.lower()
+    using_data["container"] = using_data["container"].str.strip()
+
+    # Label encoding for container data
+    container_encoder = OneHotEncoder(handle_unknown="ignore")
+    container_data = pd.DataFrame(
+        container_encoder.fit_transform(using_data[["container"]]).toarray(),
+        columns=list(container_encoder.categories_[0]),
+    )
+    container_data.rename(columns={"other": "other_container"}, inplace=True)
+
+    using_data = using_data.join(container_data)
+    using_data.drop(columns=["container"], inplace=True)
+
     using_data = using_data.dropna(axis=0)
 
     input_data = using_data.loc[
         :, using_data.columns != "viewer feeling of youtuber's style "
     ]
     output_data = using_data[["viewer feeling of youtuber's style "]]
+    # return input_data, output_data
     # print(input_data.describe())
     return input_data.to_numpy(), output_data.to_numpy().reshape(-1)
 
@@ -161,6 +171,5 @@ def lr_schedular(cur_epoch, lr, lr_decay, epoch_decay):
         return lr
 
 
-
-# input, output = read_file(FILE_DIR, COLUMNS)
+# read_file(FILE_DIR, COLUMNS)
 # print(output)
