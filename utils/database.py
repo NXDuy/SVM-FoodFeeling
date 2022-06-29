@@ -73,13 +73,13 @@ def read_file(file_dir=FILE_DIR, columns=COLUMNS):
     # Normalization
     using_data["start time"] = (
         using_data["start time"] - using_data["start time"].mean()
-    ) / using_data["start time"].var()
+    ) / using_data["start time"].std()
     using_data["end time"] = (
         using_data["end time"] - using_data["end time"].mean()
-    ) / using_data["end time"].var()
+    ) / using_data["end time"].std()
     using_data["Unnamed: 11"] = (
         using_data["Unnamed: 11"] - using_data["Unnamed: 11"].mean()
-    ) / using_data["Unnamed: 11"].var()
+    ) / using_data["Unnamed: 11"].std()
 
     # Label encoding
     label_encoder = OneHotEncoder(handle_unknown="ignore")
@@ -105,7 +105,7 @@ def read_file(file_dir=FILE_DIR, columns=COLUMNS):
         :, using_data.columns != "viewer feeling of youtuber's style "
     ]
     output_data = using_data[["viewer feeling of youtuber's style "]]
-
+    # print(input_data.describe())
     return input_data.to_numpy(), output_data.to_numpy().reshape(-1)
 
 
