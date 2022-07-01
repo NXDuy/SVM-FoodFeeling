@@ -74,6 +74,9 @@ def read_file(file_dir=FILE_DIR, columns=COLUMNS):
         "describe how to make it"
     ].astype("int")
 
+    using_data['duration'] = using_data['end time'] - using_data['start time']
+    using_data['duration'] = (using_data['duration'] - using_data['duration'].mean())/using_data['duration'].std()
+
     # Normalization
     using_data["start time"] = (
         using_data["start time"] - using_data["start time"].mean()
@@ -114,8 +117,7 @@ def read_file(file_dir=FILE_DIR, columns=COLUMNS):
         :, using_data.columns != "viewer feeling of youtuber's style "
     ]
     output_data = using_data[["viewer feeling of youtuber's style "]]
-    # return input_data, output_data
-    # print(input_data.describe())
+
     return input_data.to_numpy(), output_data.to_numpy().reshape(-1)
 
 
