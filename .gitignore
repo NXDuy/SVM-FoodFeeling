@@ -1,3 +1,6 @@
 venv/
 __pycache__/
 .vscode/
+data_analysis.py/
+SVM_model.py/
+select_feature.py/

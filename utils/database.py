@@ -24,7 +24,7 @@ COLUMNS = [
 ]
 
 
-def read_file(file_dir=FILE_DIR, columns=COLUMNS):
+def read_file(file_dir=FILE_DIR, columns=COLUMNS, convert_to_csv=False):
     try:
         raw_data = pd.read_excel(file_dir)
     except:
@@ -32,7 +32,6 @@ def read_file(file_dir=FILE_DIR, columns=COLUMNS):
         quit(0)
         # return None
 
-    # print(raw_data.columns)
     using_data = raw_data[columns]
     using_data = using_data.dropna(axis=0)
 
@@ -75,18 +74,6 @@ def read_file(file_dir=FILE_DIR, columns=COLUMNS):
     ].astype("int")
 
     using_data['duration'] = using_data['end time'] - using_data['start time']
-    using_data['duration'] = (using_data['duration'] - using_data['duration'].mean())/using_data['duration'].std()
-
-    # Normalization
-    using_data["start time"] = (
-        using_data["start time"] - using_data["start time"].mean()
-    ) / using_data["start time"].std()
-    using_data["end time"] = (
-        using_data["end time"] - using_data["end time"].mean()
-    ) / using_data["end time"].std()
-    using_data["Unnamed: 11"] = (
-        using_data["Unnamed: 11"] - using_data["Unnamed: 11"].mean()
-    ) / using_data["Unnamed: 11"].std()
 
     # Label encoding for venue data
     label_encoder = OneHotEncoder(handle_unknown="ignore")
@@ -113,16 +100,25 @@ def read_file(file_dir=FILE_DIR, columns=COLUMNS):
 
     using_data = using_data.dropna(axis=0)
 
+    # Normalize data
+
     input_data = using_data.loc[
         :, using_data.columns != "viewer feeling of youtuber's style "
     ]
+
+    for column in input_data.columns:
+        input_data[column] = (input_data[column] - input_data[column].mean())/(input_data[column].std())
+
     output_data = using_data[["viewer feeling of youtuber's style "]]
 
-    return input_data.to_numpy(), output_data.to_numpy().reshape(-1)
-
+    feature_data = input_data.join(output_data)
+    if convert_to_csv == True:
+        # print(feature_data.shape, input_data.shape, output_data.shape)
+        # print(feature_data.columns)
+        feature_data.to_csv("FeatureVideo.csv", index=False)
+    return input_data, output_data
 
 def __check_value_time(hours=0, minutes=0, seconds=0):
-    # print('Time out: 'hours, minutes, seconds)
     if hours > 24:
         print("Time error: ", hours, minutes, seconds)
         raise ValueError("Hour is out of range")
@@ -141,14 +137,13 @@ def process_time_str(time_str):
     TIME_WITH_HOUR = 3
     TIME_WITH_MINUTES = 2
     TIME_WITH_SECONDS = 1
-    MAX_SECONDS = 90060
-    # print(time_data)
     if len(time_data) == TIME_WITH_HOUR:
         hours = int(time_data[0])
         minutes = int(time_data[1])
         seconds = int(time_data[2])
 
         __check_value_time(hours, seconds, minutes)
+        
 
         return hours * 3600 + minutes * 60 + seconds
     if len(time_data) == TIME_WITH_MINUTES:
@@ -165,13 +160,4 @@ def process_time_str(time_str):
 
         return seconds
 
-
-def lr_schedular(cur_epoch, lr, lr_decay, epoch_decay):
-    if cur_epoch % epoch_decay == 0:
-        return lr * (1 - lr_decay)
-    else:
-        return lr
-
-
-# read_file(FILE_DIR, COLUMNS)
-# print(output)
+# read_file(convert_to_csv=True)
